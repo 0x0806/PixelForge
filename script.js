@@ -156,23 +156,30 @@ class PresetPro {
         reader.onload = (e) => {
             const img = new Image();
             img.onload = () => {
-                // Check image dimensions
-                if (img.width > 4000 || img.height > 4000) {
-                    this.showErrorMessage('Image dimensions are too large. Maximum supported size is 4000x4000 pixels.');
-                    this.hideLoading();
-                    return;
-                }
+                try {
+                    // Check image dimensions
+                    if (img.width > 4000 || img.height > 4000) {
+                        this.showErrorMessage('Image dimensions are too large. Maximum supported size is 4000x4000 pixels.');
+                        this.hideLoading();
+                        return;
+                    }
 
-                this.currentImage = img;
-                this.setupImageWorkspace(img);
-                this.hideLoading();
+                    this.currentImage = img;
+                    this.setupImageWorkspace(img);
+                    this.hideLoading();
+                } catch (error) {
+                    console.error('Error processing image:', error);
+                    this.showErrorMessage('Failed to process image. Please try again.');
+                    this.hideLoading();
+                }
             };
             img.onerror = () => {
                 this.showErrorMessage('Failed to load image. Please try a different file.');
                 this.hideLoading();
             };
+            // Set crossOrigin before setting src to prevent CORS issues
+            img.crossOrigin = 'anonymous';
             img.src = e.target.result;
-            img.crossOrigin = 'anonymous'; // Add this to prevent CORS issues
         };
 
         reader.onerror = () => {
@@ -595,7 +602,7 @@ class PresetPro {
 
             // Show comparison
             this.showImageComparison();
-            
+
             // Show success message
             this.showSuccessMessage(`Applied preset: ${preset.name}`);
         } catch (error) {
@@ -839,12 +846,28 @@ class PresetPro {
 
 // Global functions
 function scrollToEditor() {
-    document.getElementById('editor').scrollIntoView({ behavior: 'smooth' });
+    const editorSection = document.getElementById('editor');
+    if (editorSection) {
+        editorSection.scrollIntoView({ behavior: 'smooth' });
+    }
 }
 
 // Initialize the application
-const presetPro = new PresetPro();
-window.presetPro = presetPro;
+let presetPro;
+
+function initializeApp() {
+    if (!presetPro) {
+        presetPro = new PresetPro();
+        window.presetPro = presetPro;
+    }
+}
+
+// Initialize when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeApp);
+} else {
+    initializeApp();
+}
 
 // Add CSS animations
 const style = document.createElement('style');
@@ -902,42 +925,37 @@ style.textContent = `
 document.head.appendChild(style);
 
 // Performance optimizations
-document.addEventListener('DOMContentLoaded', () => {
+function initializeOptimizations() {
     // Lazy load images
-    const observerOptions = {
-        threshold: 0.1,
-        rootMargin: '50px'
-    };
+    if ('IntersectionObserver' in window) {
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '50px'
+        };
 
-    const imageObserver = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                const img = entry.target;
-                if (img.dataset.src) {
-                    img.src = img.dataset.src;
-                    img.removeAttribute('data-src');
-                    imageObserver.unobserve(img);
+        const imageObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const img = entry.target;
+                    if (img.dataset.src) {
+                        img.src = img.dataset.src;
+                        img.removeAttribute('data-src');
+                        imageObserver.unobserve(img);
+                    }
                 }
-            }
+            });
+        }, observerOptions);
+
+        // Observe all images with data-src
+        document.querySelectorAll('img[data-src]').forEach(img => {
+            imageObserver.observe(img);
         });
-    }, observerOptions);
+    }
+}
 
-    // Observe all images with data-src
-    document.querySelectorAll('img[data-src]').forEach(img => {
-        imageObserver.observe(img);
-    });
-});
-
-// Service Worker for offline capability (optional enhancement)
-// Disabled for now as sw.js doesn't exist
-// if ('serviceWorker' in navigator) {
-//     window.addEventListener('load', () => {
-//         navigator.serviceWorker.register('/sw.js')
-//             .then(registration => {
-//                 console.log('SW registered: ', registration);
-//             })
-//             .catch(registrationError => {
-//                 console.log('SW registration failed: ', registrationError);
-//             });
-//     });
-// }
+// Initialize optimizations
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeOptimizations);
+} else {
+    initializeOptimizations();
+}
