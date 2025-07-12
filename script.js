@@ -172,6 +172,7 @@ class PresetPro {
                 this.hideLoading();
             };
             img.src = e.target.result;
+            img.crossOrigin = 'anonymous'; // Add this to prevent CORS issues
         };
 
         reader.onerror = () => {
@@ -485,7 +486,7 @@ class PresetPro {
             <div class="preset-preview">
                 ${previewContent}
                 <div class="preset-overlay">
-                    <button class="preset-apply" onclick="presetPro.applyPreset(${preset.id})">
+                    <button class="preset-apply">
                         Apply Preset
                     </button>
                 </div>
@@ -495,6 +496,18 @@ class PresetPro {
                 <p class="preset-category">${preset.category}</p>
             </div>
         `;
+
+        // Add click event listener to the apply button
+        const applyButton = card.querySelector('.preset-apply');
+        applyButton.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.applyPreset(preset.id);
+        });
+
+        // Also add click event to the entire card
+        card.addEventListener('click', () => {
+            this.applyPreset(preset.id);
+        });
 
         return card;
     }
@@ -551,7 +564,15 @@ class PresetPro {
             this.ctx.drawImage(this.currentImage, 0, 0);
 
             // Get image data for pixel manipulation
-            const imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+            let imageData;
+            try {
+                imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+            } catch (error) {
+                console.error('Error getting image data:', error);
+                this.showErrorMessage('Unable to process image. Please try a different image.');
+                return;
+            }
+
             const data = imageData.data;
 
             // Apply filters with error handling
@@ -574,6 +595,9 @@ class PresetPro {
 
             // Show comparison
             this.showImageComparison();
+            
+            // Show success message
+            this.showSuccessMessage(`Applied preset: ${preset.name}`);
         } catch (error) {
             console.error('Error processing image:', error);
             this.showErrorMessage('Failed to apply preset. Please try again.');
@@ -819,7 +843,8 @@ function scrollToEditor() {
 }
 
 // Initialize the application
-const pixelForge = new PresetPro();
+const presetPro = new PresetPro();
+window.presetPro = presetPro;
 
 // Add CSS animations
 const style = document.createElement('style');
