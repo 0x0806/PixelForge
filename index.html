@@ -1,0 +1,242 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PixelForge - Transform Your Photos with AI-Powered Presets</title>
+    <link href="style.css" rel="stylesheet" type="text/css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="nav-brand">
+                <i class="fas fa-magic"></i>
+                <span>PixelForge</span>
+            </div>
+            <nav class="nav-menu">
+                <a href="#home" class="nav-link active">Home</a>
+                <a href="#presets" class="nav-link">Presets</a>
+                <a href="#editor" class="nav-link">Editor</a>
+                <a href="#gallery" class="nav-link">Gallery</a>
+            </nav>
+            <div class="nav-actions">
+                <button class="btn-secondary">Sign In</button>
+                <button class="btn-primary">Get Pro</button>
+            </div>
+            <button class="mobile-toggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero" id="home">
+        <div class="hero-bg"></div>
+        <div class="container">
+            <div class="hero-content">
+                <h1 class="hero-title">Forge Stunning Photos with <span class="gradient-text">300+ AI-Powered Presets</span></h1>
+                <p class="hero-subtitle">Transform ordinary images into extraordinary art with our professional-grade preset collection. Upload, apply, and download in seconds.</p>
+                <div class="hero-actions">
+                    <button class="btn-hero" onclick="scrollToEditor()">
+                        <i class="fas fa-upload"></i>
+                        Start Editing
+                    </button>
+                    <button class="btn-ghost">
+                        <i class="fas fa-play"></i>
+                        Watch Demo
+                    </button>
+                </div>
+                <div class="hero-stats">
+                    <div class="stat">
+                        <span class="stat-number">300+</span>
+                        <span class="stat-label">Presets</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-number">50K+</span>
+                        <span class="stat-label">Users</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-number">1M+</span>
+                        <span class="stat-label">Photos Edited</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Photo Editor Section -->
+    <section class="editor-section" id="editor">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">AI-Powered Photo Forge</h2>
+                <p class="section-subtitle">Upload your image and transform it with our premium presets</p>
+            </div>
+            
+            <div class="editor-workspace">
+                <!-- Upload Area -->
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-content">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <h3>Drag & Drop Your Image</h3>
+                        <p>Or click to browse files</p>
+                        <input type="file" id="imageInput" accept="image/*" hidden>
+                        <button class="btn-upload" onclick="document.getElementById('imageInput').click()">
+                            Choose File
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Image Preview & Controls -->
+                <div class="image-workspace" id="imageWorkspace" style="display: none;">
+                    <div class="image-container">
+                        <div class="image-preview">
+                            <img id="originalImage" alt="Original">
+                            <img id="editedImage" alt="Edited" style="display: none;">
+                        </div>
+                        <div class="image-controls">
+                            <button class="control-btn" id="toggleView">
+                                <i class="fas fa-eye"></i>
+                                Compare
+                            </button>
+                            <button class="control-btn" id="resetImage">
+                                <i class="fas fa-undo"></i>
+                                Reset
+                            </button>
+                            <button class="control-btn" id="downloadImage">
+                                <i class="fas fa-download"></i>
+                                Download
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Presets Section -->
+    <section class="presets-section" id="presets">
+        <div class="container">
+            <div class="presets-header">
+                <h2 class="section-title">Premium Preset Collection</h2>
+                <div class="presets-filters">
+                    <button class="filter-btn active" data-category="all">All Presets</button>
+                    <button class="filter-btn" data-category="portrait">Portrait</button>
+                    <button class="filter-btn" data-category="landscape">Landscape</button>
+                    <button class="filter-btn" data-category="vintage">Vintage</button>
+                    <button class="filter-btn" data-category="cinematic">Cinematic</button>
+                    <button class="filter-btn" data-category="black-white">B&W</button>
+                </div>
+            </div>
+            
+            <div class="presets-grid" id="presetsGrid">
+                <!-- Presets will be dynamically generated -->
+            </div>
+            
+            <div class="load-more">
+                <button class="btn-secondary" id="loadMorePresets">
+                    Load More Presets
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features-section">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Why Choose PixelForge?</h2>
+                <p class="section-subtitle">Professional-grade tools for every photographer</p>
+            </div>
+            
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-bolt"></i>
+                    </div>
+                    <h3>Lightning Fast</h3>
+                    <p>Apply presets instantly with our optimized processing engine</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-mobile-alt"></i>
+                    </div>
+                    <h3>Mobile Ready</h3>
+                    <p>Fully responsive design that works perfectly on all devices</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-palette"></i>
+                    </div>
+                    <h3>300+ Presets</h3>
+                    <p>Extensive collection of professional-grade editing presets</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h3>Privacy First</h3>
+                    <p>Your images are processed locally and never stored on our servers</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <div class="nav-brand">
+                        <i class="fas fa-magic"></i>
+                        <span>PixelForge</span>
+                    </div>
+                    <p>AI-powered photo editing platform with premium presets</p>
+                </div>
+                <div class="footer-links">
+                    <div class="link-group">
+                        <h4>Product</h4>
+                        <a href="#presets">Presets</a>
+                        <a href="#editor">Editor</a>
+                        <a href="#features">Features</a>
+                    </div>
+                    <div class="link-group">
+                        <h4>Support</h4>
+                        <a href="#help">Help Center</a>
+                        <a href="#contact">Contact</a>
+                        <a href="#faq">FAQ</a>
+                    </div>
+                    <div class="link-group">
+                        <h4>Legal</h4>
+                        <a href="#privacy">Privacy Policy</a>
+                        <a href="#terms">Terms of Service</a>
+                        <a href="#cookies">Cookies</a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 PixelForge. Developed by 0x0806 – All Rights Reserved.</p>
+                <div class="social-links">
+                    <a href="#"><i class="fab fa-twitter"></i></a>
+                    <a href="#"><i class="fab fa-instagram"></i></a>
+                    <a href="#"><i class="fab fa-youtube"></i></a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+        <p>Processing your image...</p>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
