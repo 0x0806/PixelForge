@@ -1,7 +1,7 @@
 
 # PixelForge
 
-A professional AI-powered photo editing platform with 300+ premium presets for instant image transformation.
+A browser-based photo editor with 300 deterministic presets across 12 categories. Everything runs locally in your browser.
 
 ## Overview
 
@@ -13,8 +13,11 @@ PixelForge is a cutting-edge web application that allows users to transform ordi
 - **300+ Premium Presets**: Extensive collection of professional-grade editing presets
 - **Instant Processing**: Real-time image transformation with optimized algorithms
 - **Drag & Drop Upload**: Intuitive file upload with support for multiple image formats
-- **Live Preview**: Compare original and edited images side-by-side
-- **One-Click Download**: Export edited images in high quality
+- **Live Previews**: Every preset card shows a thumbnail of *your* photo with that preset applied
+- **Compare**: Toggle between the original and the edited image
+- **One-Click Download**: Export the edited image as a full-resolution PNG
+- **Sample Image**: Try the editor without uploading anything
+- **Keyboard Accessible**: Upload area and preset cards work with Enter/Space
 
 ### Technical Highlights
 - **Responsive Design**: Fully optimized for desktop, tablet, and mobile devices
@@ -24,16 +27,12 @@ PixelForge is a cutting-edge web application that allows users to transform ordi
 - **Performance Optimized**: Efficient rendering and memory management
 
 ### Preset Categories
-- Portrait Enhancement
-- Landscape Filters
-- Vintage Effects
-- Cinematic Looks
-- Black & White Conversions
-- Street Photography
-- Nature Scenes
-- Urban Aesthetics
-- Moody Atmospheres
-- Bright & Airy Styles
+Portrait, Landscape, Vintage, Cinematic, Black & White, Street, Nature, Urban, Moody, Bright & Airy, Warm and Cool (25 presets each).
+Presets are generated from per-category profiles with a seeded random generator, so they are identical on every load
+and behave like their name (B&W presets are greyscale, Warm presets warm the image, and so on).
+
+Each preset combines brightness, contrast, shadows/highlights, warmth/tint, hue, saturation/vibrance,
+optional black & white, sharpening, vignette and film grain (see `filters.js`).
 
 ## Technology Stack
 
@@ -57,20 +56,42 @@ PixelForge is a cutting-edge web application that allows users to transform ordi
 
 ### Usage
 
-1. **Upload Image**: Click "Choose File" or drag and drop an image
+1. **Upload Image**: Click the upload area, or drag and drop an image (or press "Try a Sample Image")
 2. **Browse Presets**: Explore 300+ available presets organized by category
 3. **Apply Effects**: Click any preset to apply it to your image
-4. **Compare Results**: Use the toggle button to compare original vs edited
-5. **Download**: Save your edited image in high quality
+4. **Compare Results**: Use the Compare / Show Edit button to flip between original and edited
+5. **Download**: Save your edited image as a PNG
+6. **New Image**: Load another photo at any time
 
 ## File Structure
 
 ```
 PixelForge/
 ├── index.html          # Main application file
-├── style.css           # Comprehensive styling and responsive design
-├── script.js           # Core application logic and image processing
+├── style.css           # Styling and responsive design
+├── filters.js          # Pure image-processing engine + preset generation (also used by tests)
+├── script.js           # UI logic
+├── package.json        # `npm test`
+├── test/
+│   ├── filters.test.js # Unit tests for the engine, presets and index.html wiring
+│   └── ui.test.js      # Optional end-to-end browser test (Chromium)
 └── README.md           # Project documentation
+
+```
+## Testing
+
+```bash
+npm test
+```
+
+Uses Node's built-in test runner (Node 18+), no dependencies required. The unit tests cover the filter maths,
+preset generation and the HTML wiring. `test/ui.test.js` additionally drives the real page in Chromium
+(upload, filtering, applying, compare, reset, download, mobile menu) and is **skipped automatically** unless
+`playwright-core` and a Chromium binary are available:
+
+```bash
+npm install --no-save playwright-core
+CHROMIUM_PATH=/path/to/chromium npm test   # CHROMIUM_PATH is optional; /usr/bin/chromium is tried by default
 ```
 
 ## Browser Compatibility
