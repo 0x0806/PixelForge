@@ -197,11 +197,11 @@ test('index.html: filter buttons match categories; every dependency exists', () 
     assert.deepEqual(buttons, ['all', ...F.CATEGORIES.map((c) => c.id)]);
 
     for (const m of html.matchAll(/<script src="([^"]+)"/g)) assert.ok(fs.existsSync(path.join(root, m[1])), m[1]);
-    assert.ok(html.indexOf('filters.js') < html.indexOf('script.js'));
+    for (const [a, b] of [['vendor/three.min.js', 'hero.js'], ['filters.js', 'sample.js'], ['sample.js', 'hero.js'], ['hero.js', 'script.js']]) assert.ok(html.indexOf(a) < html.indexOf(b), `${a} must load before ${b}`);
 
     const ids = new Set([...html.matchAll(/\bid="([^"]+)"/g)].map((m) => m[1]));
     for (const m of html.matchAll(/href="#([^"]+)"/g)) assert.ok(ids.has(m[1]), `dead anchor #${m[1]}`);
-    for (const id of ['uploadArea', 'imageInput', 'imageWorkspace', 'originalImage', 'editedImage', 'toggleView', 'resetImage', 'downloadImage', 'newImage', 'presetsGrid', 'loadMorePresets', 'loadingOverlay', 'sampleImage']) {
+    for (const id of ['uploadArea', 'imageInput', 'imageWorkspace', 'originalImage', 'editedImage', 'toggleView', 'resetImage', 'downloadImage', 'newImage', 'heroStage', 'heroCanvas', 'heroPrints', 'presetsGrid', 'loadMorePresets', 'loadingOverlay', 'sampleImage']) {
         assert.ok(ids.has(id), `missing #${id}`);
     }
     assert.ok(!/href="#"/.test(html), 'placeholder href="#" found');

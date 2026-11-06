@@ -17,6 +17,7 @@ PixelForge is a cutting-edge web application that allows users to transform ordi
 - **Compare**: Toggle between the original and the edited image
 - **One-Click Download**: Export the edited image as a full-resolution PNG
 - **Sample Image**: Try the editor without uploading anything
+- **three.js Hero**: seven prints of the sample photo, each graded by the real engine and shown on a 3D contact table. Hover or focus a print to lift it; click it (or press Enter) to open that look in the editor, on your own photo if one is loaded. Falls back to a plain row of the same prints without WebGL, and respects reduced-motion settings
 - **Keyboard Accessible**: Upload area and preset cards work with Enter/Space
 
 ### Technical Highlights
@@ -39,8 +40,8 @@ optional black & white, sharpening, vignette and film grain (see `filters.js`).
 - **Frontend**: HTML5, CSS3, JavaScript (ES6+)
 - **Image Processing**: Canvas API with custom algorithms
 - **Styling**: Modern CSS with CSS Grid and Flexbox
-- **Typography**: Inter font family for optimal readability
-- **Icons**: Font Awesome for consistent iconography
+- **3D hero**: three.js r128 (vendored in `vendor/`, so no CDN is needed and `file://` works)
+- **Typography**: Archivo (variable width and weight, from Google Fonts)
 
 ## Getting Started
 
@@ -70,7 +71,10 @@ PixelForge/
 ├── index.html          # Main application file
 ├── style.css           # Styling and responsive design
 ├── filters.js          # Pure image-processing engine + preset generation (also used by tests)
+├── sample.js           # Generated sample photo
+├── hero.js             # three.js hero (graded prints)
 ├── script.js           # UI logic
+├── vendor/three.min.js # three.js r128 (MIT)
 ├── package.json        # `npm test`
 ├── test/
 │   ├── filters.test.js # Unit tests for the engine, presets and index.html wiring
@@ -135,8 +139,8 @@ For technical support or feature requests, please contact the development team.
 
 ## Acknowledgments
 
-- Font Awesome for iconography
-- Google Fonts for typography
+- three.js for the hero scene (MIT)
+- Google Fonts (Archivo) for typography
 - Modern CSS techniques for responsive design
 - HTML5 Canvas API for image processing
 

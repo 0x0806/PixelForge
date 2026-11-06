@@ -37,7 +37,7 @@ test('browser: upload, filter, apply, compare, reset, download, new image', { sk
     const png = path.join(tmp, 'photo.png');
     makePng(png);
 
-    const browser = await chromium.launch({ executablePath: exe, args: ['--no-sandbox'] });
+    const browser = await chromium.launch({ executablePath: exe, args: ['--no-sandbox', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
     t.after(async () => { await browser.close(); fs.rmSync(tmp, { recursive: true, force: true }); });
     const ctx = await browser.newContext({ acceptDownloads: true });
     // CDN fonts/icons are cosmetic; keep the test hermetic.
@@ -49,6 +49,15 @@ test('browser: upload, filter, apply, compare, reset, download, new image', { sk
 
     await page.goto('file://' + path.join(__dirname, '..', 'index.html'));
 
+    // Hero: seven keyboard-reachable prints; three.js or the documented fallback ran
+    const heroMode = await page.evaluate(() => document.documentElement.dataset.hero);
+    assert.ok(['webgl', 'fallback'].includes(heroMode), `hero mode: ${heroMode}`);
+    assert.equal(await page.locator('.print-btn').count(), 7);
+    if (heroMode === 'webgl') {
+        const size = await page.evaluate(() => { const c = document.getElementById('heroCanvas'); return [c.width, c.height]; });
+        assert.ok(size[0] > 100 && size[1] > 100);
+    }
+
     // Initial state
     assert.equal(await page.locator('.filter-btn').count(), 13);
     assert.equal(await page.locator('.preset-card').count(), 12);
@@ -58,11 +67,22 @@ test('browser: upload, filter, apply, compare, reset, download, new image', { sk
     // Filtering by every category yields cards of that category only
     for (const cat of await page.locator('.filter-btn').evaluateAll((b) => b.map((x) => x.dataset.category))) {
         await page.click(`.filter-btn[data-category="${cat}"]`);
-        const cats = await page.locator('.preset-category').evaluateAll((e) => [...new Set(e.map((x) => x.textContent))]);
+        const cats = await page.locator('.preset-card').evaluateAll((e) => [...new Set(e.map((x) => x.dataset.category))]);
         assert.ok(cats.length >= 1, cat);
         if (cat !== 'all') assert.deepEqual(cats, [cat]);
     }
     await page.click('.filter-btn[data-category="all"]');
+
+    // Clicking a hero print with no photo loaded opens the sample photo with that look applied
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.locator('.print-btn').nth(2).dispatchEvent('click');
+    await page.waitForSelector('.notification.success');
+    await page.waitForSelector('#imageWorkspace', { state: 'visible' });
+    assert.equal(await page.evaluate(() => document.getElementById('originalImage').naturalWidth), 960);
+    assert.equal(await page.evaluate(() => document.getElementById('editedImage').hasAttribute('src')), true);
+    await page.click('#newImage');
+    await page.waitForSelector('#uploadArea', { state: 'visible' });
+    await page.evaluate(() => document.querySelectorAll('.notification').forEach((n) => n.remove()));
 
     // Applying with no image gives an error toast, not an alert
     await page.locator('.preset-card').first().click();
