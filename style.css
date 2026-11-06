@@ -1068,3 +1068,78 @@ input:focus,
     }
 }
 
+
+/* ---- Editor: stacked original/edited images ---- */
+.image-preview {
+    display: grid;
+}
+
+.image-preview img {
+    grid-area: 1 / 1;
+    place-self: center;
+    transition: opacity 0.3s ease-in-out;
+}
+
+.image-preview #editedImage:not([src]) {
+    display: none;
+}
+
+.upload-area {
+    cursor: pointer;
+}
+
+/* ---- Preset cards ---- */
+.preset-preview canvas,
+.preset-preview .preset-swatch {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.preset-card {
+    cursor: pointer;
+}
+
+.preset-card:active {
+    transform: translateY(-4px) scale(0.98);
+}
+
+.preset-card.selected {
+    outline: 2px solid var(--primary-600);
+    outline-offset: 2px;
+}
+
+a.btn-primary,
+a.btn-secondary {
+    text-decoration: none;
+}
+
+/* ---- Notifications ---- */
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    color: #fff;
+    padding: 16px 24px;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    z-index: 10000;
+    animation: slideIn 0.3s ease-out;
+    font-weight: 500;
+    max-width: 300px;
+}
+
+.notification.success { background: linear-gradient(135deg, #10b981, #059669); }
+.notification.error { background: linear-gradient(135deg, #ef4444, #dc2626); }
+.notification.leaving { animation: slideOut 0.3s ease-in forwards; }
+
+@keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes slideOut {
+    from { transform: translateX(0); opacity: 1; }
+    to { transform: translateX(100%); opacity: 0; }
+}

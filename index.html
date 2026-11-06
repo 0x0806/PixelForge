@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PixelForge - Transform Your Photos with AI-Powered Presets</title>
+    <title>PixelForge - Transform Your Photos with 300+ Presets</title>
     <link href="style.css" rel="stylesheet" type="text/css" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -18,15 +18,14 @@
             </div>
             <nav class="nav-menu">
                 <a href="#home" class="nav-link active">Home</a>
-                <a href="#presets" class="nav-link">Presets</a>
                 <a href="#editor" class="nav-link">Editor</a>
-                <a href="#gallery" class="nav-link">Gallery</a>
+                <a href="#presets" class="nav-link">Presets</a>
+                <a href="#features" class="nav-link">Features</a>
             </nav>
             <div class="nav-actions">
-                <button class="btn-secondary">Sign In</button>
-                <button class="btn-primary">Get Pro</button>
+                <a class="btn-primary" href="https://github.com/0x0806/PixelForge" target="_blank" rel="noopener"><i class="fab fa-github"></i> GitHub</a>
             </div>
-            <button class="mobile-toggle">
+            <button class="mobile-toggle" aria-label="Toggle navigation menu" aria-expanded="false">
                 <span></span>
                 <span></span>
                 <span></span>
@@ -42,13 +41,13 @@
                 <h1 class="hero-title">Forge Stunning Photos with <span class="gradient-text">300+ AI-Powered Presets</span></h1>
                 <p class="hero-subtitle">Transform ordinary images into extraordinary art with our professional-grade preset collection. Upload, apply, and download in seconds.</p>
                 <div class="hero-actions">
-                    <button class="btn-hero" onclick="scrollToEditor()">
+                    <button class="btn-hero" id="startEditing" onclick="scrollToEditor()">
                         <i class="fas fa-upload"></i>
                         Start Editing
                     </button>
-                    <button class="btn-ghost">
-                        <i class="fas fa-play"></i>
-                        Watch Demo
+                    <button class="btn-ghost" id="sampleImage">
+                        <i class="fas fa-image"></i>
+                        Try a Sample Image
                     </button>
                 </div>
                 <div class="hero-stats">
@@ -57,12 +56,12 @@
                         <span class="stat-label">Presets</span>
                     </div>
                     <div class="stat">
-                        <span class="stat-number">50K+</span>
-                        <span class="stat-label">Users</span>
+                        <span class="stat-number">12</span>
+                        <span class="stat-label">Categories</span>
                     </div>
                     <div class="stat">
-                        <span class="stat-number">1M+</span>
-                        <span class="stat-label">Photos Edited</span>
+                        <span class="stat-number">100%</span>
+                        <span class="stat-label">In Your Browser</span>
                     </div>
                 </div>
             </div>
@@ -79,13 +78,13 @@
             
             <div class="editor-workspace">
                 <!-- Upload Area -->
-                <div class="upload-area" id="uploadArea">
+                <div class="upload-area" id="uploadArea" tabindex="0" role="button" aria-label="Upload an image: drag and drop or click to browse">
                     <div class="upload-content">
                         <i class="fas fa-cloud-upload-alt"></i>
                         <h3>Drag & Drop Your Image</h3>
                         <p>Or click to browse files</p>
                         <input type="file" id="imageInput" accept="image/*" hidden>
-                        <button class="btn-upload" onclick="document.getElementById('imageInput').click()">
+                        <button class="btn-upload" type="button">
                             Choose File
                         </button>
                     </div>
@@ -96,7 +95,7 @@
                     <div class="image-container">
                         <div class="image-preview">
                             <img id="originalImage" alt="Original">
-                            <img id="editedImage" alt="Edited" style="display: none;">
+                            <img id="editedImage" alt="Edited">
                         </div>
                         <div class="image-controls">
                             <button class="control-btn" id="toggleView">
@@ -106,6 +105,10 @@
                             <button class="control-btn" id="resetImage">
                                 <i class="fas fa-undo"></i>
                                 Reset
+                            </button>
+                            <button class="control-btn" id="newImage">
+                                <i class="fas fa-image"></i>
+                                New Image
                             </button>
                             <button class="control-btn" id="downloadImage">
                                 <i class="fas fa-download"></i>
@@ -129,7 +132,14 @@
                     <button class="filter-btn" data-category="landscape">Landscape</button>
                     <button class="filter-btn" data-category="vintage">Vintage</button>
                     <button class="filter-btn" data-category="cinematic">Cinematic</button>
-                    <button class="filter-btn" data-category="black-white">B&W</button>
+                    <button class="filter-btn" data-category="black-white">B&amp;W</button>
+                    <button class="filter-btn" data-category="street">Street</button>
+                    <button class="filter-btn" data-category="nature">Nature</button>
+                    <button class="filter-btn" data-category="urban">Urban</button>
+                    <button class="filter-btn" data-category="moody">Moody</button>
+                    <button class="filter-btn" data-category="bright">Bright &amp; Airy</button>
+                    <button class="filter-btn" data-category="warm">Warm</button>
+                    <button class="filter-btn" data-category="cool">Cool</button>
                 </div>
             </div>
             
@@ -147,7 +157,7 @@
     </section>
 
     <!-- Features Section -->
-    <section class="features-section">
+    <section class="features-section" id="features">
         <div class="container">
             <div class="section-header">
                 <h2 class="section-title">Why Choose PixelForge?</h2>
@@ -207,24 +217,20 @@
                     </div>
                     <div class="link-group">
                         <h4>Support</h4>
-                        <a href="#help">Help Center</a>
-                        <a href="#contact">Contact</a>
-                        <a href="#faq">FAQ</a>
+                        <a href="https://github.com/0x0806/PixelForge#readme" target="_blank" rel="noopener">Documentation</a>
+                        <a href="https://github.com/0x0806/PixelForge/issues" target="_blank" rel="noopener">Report an Issue</a>
                     </div>
                     <div class="link-group">
                         <h4>Legal</h4>
-                        <a href="#privacy">Privacy Policy</a>
-                        <a href="#terms">Terms of Service</a>
-                        <a href="#cookies">Cookies</a>
+                        <a href="https://github.com/0x0806/PixelForge#privacy--security" target="_blank" rel="noopener">Privacy</a>
+                        <a href="https://github.com/0x0806/PixelForge#license" target="_blank" rel="noopener">License</a>
                     </div>
                 </div>
             </div>
             <div class="footer-bottom">
                 <p>&copy; 2025 PixelForge. Developed by 0x0806 – All Rights Reserved.</p>
                 <div class="social-links">
-                    <a href="#"><i class="fab fa-twitter"></i></a>
-                    <a href="#"><i class="fab fa-instagram"></i></a>
-                    <a href="#"><i class="fab fa-youtube"></i></a>
+                    <a href="https://github.com/0x0806/PixelForge" target="_blank" rel="noopener" aria-label="PixelForge on GitHub"><i class="fab fa-github"></i></a>
                 </div>
             </div>
         </div>
@@ -236,6 +242,7 @@
         <p>Processing your image...</p>
     </div>
 
+    <script src="filters.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

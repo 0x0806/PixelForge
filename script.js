@@ -1,798 +1,499 @@
-// Enhanced PresetPro JavaScript with Advanced Features
-class PresetPro {
+// PixelForge UI. Pixel maths lives in filters.js (window.PixelForgeFilters).
+class PixelForge {
     constructor() {
-        this.currentImage = null;
-        this.canvas = null;
-        this.ctx = null;
-        this.presets = [];
-        this.filteredPresets = [];
-        this.currentPreset = null;
+        this.F = window.PixelForgeFilters;
+        this.presets = this.F.createPresets();
+        this.filteredPresets = [...this.presets];
+        this.activeCategory = 'all';
         this.loadedPresetsCount = 0;
         this.presetsPerLoad = 12;
 
-        this.init();
-        this.generatePresets();
+        this.currentImage = null;
+        this.currentPreset = null;
+        this.showingEdited = false;
+        this.busy = false;
+        this.originalUrl = null;
+        this.editedUrl = null;
+
+        this.canvas = document.createElement('canvas');
+        this.ctx = this.canvas.getContext('2d', { willReadFrequently: true });
+
+        // Small copy of the uploaded image used for the preset thumbnails.
+        this.thumbBase = null;
+        this.thumbCache = new Map();
+
+        this.el = {
+            uploadArea: document.getElementById('uploadArea'),
+            imageInput: document.getElementById('imageInput'),
+            workspace: document.getElementById('imageWorkspace'),
+            original: document.getElementById('originalImage'),
+            edited: document.getElementById('editedImage'),
+            toggle: document.getElementById('toggleView'),
+            reset: document.getElementById('resetImage'),
+            download: document.getElementById('downloadImage'),
+            newImage: document.getElementById('newImage'),
+            grid: document.getElementById('presetsGrid'),
+            loadMore: document.getElementById('loadMorePresets'),
+            overlay: document.getElementById('loadingOverlay')
+        };
+
+        this.setupUpload();
         this.bindEvents();
         this.renderPresets();
     }
 
-    init() {
-        // Create canvas for image processing
-        this.canvas = document.createElement('canvas');
-        this.ctx = this.canvas.getContext('2d');
+    // ---------- Upload ----------
 
-        // Initialize upload area
-        this.setupDragAndDrop();
+    setupUpload() {
+        const { uploadArea, imageInput } = this.el;
 
-        // Set initial preset filter
-        this.filteredPresets = this.presets;
-    }
-
-    // Generate 1000+ professional presets
-    generatePresets() {
-        const categories = [
-            'portrait', 'landscape', 'vintage', 'cinematic', 'black-white',
-            'street', 'nature', 'urban', 'moody', 'bright', 'warm', 'cool'
-        ];
-
-        const presetNames = [
-            'Golden Hour', 'Vintage Film', 'Deep Shadows', 'Bright Whites', 'Warm Sunset',
-            'Cool Blues', 'Forest Green', 'Urban Gray', 'Sepia Dreams', 'High Contrast',
-            'Soft Focus', 'Sharp Details', 'Matte Finish', 'Glossy Pop', 'Faded Memory',
-            'Bold Colors', 'Pastel Tones', 'Dark Mood', 'Light Airy', 'Rich Saturation',
-            'Desaturated', 'Monochrome', 'Duo Tone', 'Split Tone', 'Color Grade',
-            'Film Emulation', 'Digital Art', 'HDR Effect', 'Cross Process', 'Bleach Bypass',
-            'Orange Teal', 'Teal Orange', 'Pink Purple', 'Blue Yellow', 'Green Magenta',
-            'Retro Vibes', 'Modern Clean', 'Grunge Style', 'Minimal Look', 'Maximum Impact',
-            'Soft Glow', 'Hard Light', 'Dramatic Sky', 'Peaceful Calm', 'Energy Boost',
-            'Natural Look', 'Artistic Flair', 'Professional', 'Creative Edit', 'Instagram Ready'
-        ];
-
-        // Generate 300 presets (removed pro limitation)
-        for (let i = 0; i < 300; i++) {
-            const category = categories[Math.floor(Math.random() * categories.length)];
-            const baseName = presetNames[Math.floor(Math.random() * presetNames.length)];
-            const variation = Math.floor(Math.random() * 20) + 1;
-
-            this.presets.push({
-                id: i + 1,
-                name: `${baseName} ${variation > 1 ? variation : ''}`.trim(),
-                category: category,
-                thumbnail: this.generateThumbnail(category),
-                settings: this.generatePresetSettings(),
-                previewCanvas: null // Will store generated preview
-            });
-        }
-
-        this.filteredPresets = [...this.presets];
-    }
-
-    generateThumbnail(category) {
-        // Generate gradient backgrounds for thumbnails
-        const gradients = {
-            portrait: 'linear-gradient(135deg, #ff9a8b 0%, #fecfef 100%)',
-            landscape: 'linear-gradient(135deg, #a8e6cf 0%, #dcedc1 100%)',
-            vintage: 'linear-gradient(135deg, #d4a574 0%, #f4e2d7 100%)',
-            cinematic: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            'black-white': 'linear-gradient(135deg, #bdc3c7 0%, #2c3e50 100%)',
-            street: 'linear-gradient(135deg, #ff7e5f 0%, #feb47b 100%)',
-            nature: 'linear-gradient(135deg, #56ab2f 0%, #a8e6cf 100%)',
-            urban: 'linear-gradient(135deg, #485563 0%, #29323c 100%)',
-            moody: 'linear-gradient(135deg, #2c3e50 0%, #fd746c 100%)',
-            bright: 'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)',
-            warm: 'linear-gradient(135deg, #ff9a8b 0%, #fad0c4 100%)',
-            cool: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)'
-        };
-
-        return gradients[category] || gradients.portrait;
-    }
-
-    generatePresetSettings() {
-        return {
-            brightness: (Math.random() - 0.5) * 50,
-            contrast: (Math.random() - 0.5) * 80,
-            saturation: (Math.random() - 0.5) * 60,
-            hue: (Math.random() - 0.5) * 40,
-            shadows: (Math.random() - 0.5) * 30,
-            highlights: (Math.random() - 0.5) * 30,
-            vibrance: (Math.random() - 0.5) * 40,
-            warmth: (Math.random() - 0.5) * 50,
-            tint: (Math.random() - 0.5) * 30,
-            vignette: Math.random() * 20,
-            grain: Math.random() * 15,
-            sharpen: Math.random() * 10
-        };
-    }
-
-    setupDragAndDrop() {
-        const uploadArea = document.getElementById('uploadArea');
-        const imageInput = document.getElementById('imageInput');
-
+        uploadArea.addEventListener('click', (e) => {
+            // The hidden input lives inside the area; ignore its own bubbling click.
+            if (e.target === imageInput) return;
+            imageInput.click();
+        });
+        uploadArea.addEventListener('keydown', (e) => {
+            if (e.target === uploadArea && (e.key === 'Enter' || e.key === ' ')) {
+                e.preventDefault();
+                imageInput.click();
+            }
+        });
         uploadArea.addEventListener('dragover', (e) => {
             e.preventDefault();
             uploadArea.classList.add('dragover');
         });
-
         uploadArea.addEventListener('dragleave', (e) => {
             e.preventDefault();
             uploadArea.classList.remove('dragover');
         });
-
         uploadArea.addEventListener('drop', (e) => {
             e.preventDefault();
             uploadArea.classList.remove('dragover');
-
-            const files = e.dataTransfer.files;
-            if (files.length > 0 && files[0].type.startsWith('image/')) {
-                this.handleImageUpload(files[0]);
-            }
+            const file = e.dataTransfer && e.dataTransfer.files[0];
+            if (file) this.handleImageUpload(file);
         });
-
         imageInput.addEventListener('change', (e) => {
-            if (e.target.files.length > 0) {
-                this.handleImageUpload(e.target.files[0]);
-            }
+            const file = e.target.files[0];
+            if (file) this.handleImageUpload(file);
+            // Allow choosing the same file again later.
+            imageInput.value = '';
         });
     }
 
     handleImageUpload(file) {
-        // Validate file type
         if (!file.type.startsWith('image/')) {
             this.showErrorMessage('Please upload a valid image file (JPEG, PNG, GIF, WebP).');
             return;
         }
-
-        // Check file size (limit to 10MB)
-        const maxSize = 10 * 1024 * 1024; // 10MB
-        if (file.size > maxSize) {
+        if (file.size > 10 * 1024 * 1024) {
             this.showErrorMessage('Image file is too large. Please choose a file smaller than 10MB.');
             return;
         }
+        this.loadImageFromUrl(URL.createObjectURL(file), true);
+    }
 
-        const reader = new FileReader();
-
-        this.showLoading('Processing your image...');
-
-        reader.onload = (e) => {
-            const img = new Image();
-            img.onload = () => {
-                try {
-                    // Check image dimensions
-                    if (img.width > 4000 || img.height > 4000) {
-                        this.showErrorMessage('Image dimensions are too large. Maximum supported size is 4000x4000 pixels.');
-                        this.hideLoading();
-                        return;
-                    }
-
-                    this.currentImage = img;
-                    this.setupImageWorkspace(img);
-                    this.hideLoading();
-                } catch (error) {
-                    console.error('Error processing image:', error);
-                    this.showErrorMessage('Failed to process image. Please try again.');
-                    this.hideLoading();
-                }
-            };
-            img.onerror = () => {
-                this.showErrorMessage('Failed to load image. Please try a different file.');
+    loadImageFromUrl(url, isObjectUrl) {
+        this.showLoading('Loading your image...');
+        const img = new Image();
+        img.onload = () => {
+            if (img.naturalWidth > 4000 || img.naturalHeight > 4000) {
+                if (isObjectUrl) URL.revokeObjectURL(url);
                 this.hideLoading();
-            };
-            // Set crossOrigin before setting src to prevent CORS issues
-            img.crossOrigin = 'anonymous';
-            img.src = e.target.result;
-        };
-
-        reader.onerror = () => {
-            this.showErrorMessage('Failed to read file. Please try again.');
+                this.showErrorMessage('Image dimensions are too large. Maximum supported size is 4000x4000 pixels.');
+                return;
+            }
+            if (this.originalUrl) URL.revokeObjectURL(this.originalUrl);
+            this.originalUrl = isObjectUrl ? url : null;
+            this.setupImageWorkspace(img);
             this.hideLoading();
         };
+        img.onerror = () => {
+            if (isObjectUrl) URL.revokeObjectURL(url);
+            this.hideLoading();
+            this.showErrorMessage('Failed to load image. Please try a different file.');
+        };
+        img.src = url;
+    }
 
-        reader.readAsDataURL(file);
+    /** Draws a generated landscape so the editor can be tried without a file. */
+    loadSampleImage() {
+        const c = document.createElement('canvas');
+        c.width = 960;
+        c.height = 640;
+        const x = c.getContext('2d');
+        const sky = x.createLinearGradient(0, 0, 0, 400);
+        sky.addColorStop(0, '#3b6fb6');
+        sky.addColorStop(0.6, '#f4b183');
+        sky.addColorStop(1, '#fde7c4');
+        x.fillStyle = sky;
+        x.fillRect(0, 0, 960, 640);
+        x.fillStyle = '#fff3b0';
+        x.beginPath();
+        x.arc(680, 300, 70, 0, Math.PI * 2);
+        x.fill();
+        const hills = [['#6b8f71', 420, 90], ['#3f6b4f', 480, 70], ['#27493a', 540, 50]];
+        hills.forEach(([color, base, amp], n) => {
+            x.fillStyle = color;
+            x.beginPath();
+            x.moveTo(0, 640);
+            for (let px = 0; px <= 960; px += 10) {
+                x.lineTo(px, base + Math.sin(px / (110 + n * 40) + n * 2) * amp * 0.5);
+            }
+            x.lineTo(960, 640);
+            x.closePath();
+            x.fill();
+        });
+        x.fillStyle = '#c0392b';
+        x.fillRect(180, 470, 70, 60);
+        x.fillStyle = '#7b241c';
+        x.beginPath();
+        x.moveTo(170, 470);
+        x.lineTo(215, 430);
+        x.lineTo(260, 470);
+        x.closePath();
+        x.fill();
+        this.loadImageFromUrl(c.toDataURL('image/png'), false);
     }
 
     setupImageWorkspace(img) {
-        const uploadArea = document.getElementById('uploadArea');
-        const imageWorkspace = document.getElementById('imageWorkspace');
-        const originalImage = document.getElementById('originalImage');
-        const editedImage = document.getElementById('editedImage');
+        this.currentImage = img;
+        this.currentPreset = null;
+        this.showingEdited = false;
 
-        // Hide upload area and show workspace
-        uploadArea.style.display = 'none';
-        imageWorkspace.style.display = 'block';
+        this.el.uploadArea.style.display = 'none';
+        this.el.workspace.style.display = 'block';
 
-        // Set up canvas
-        this.canvas.width = img.width;
-        this.canvas.height = img.height;
+        this.canvas.width = img.naturalWidth;
+        this.canvas.height = img.naturalHeight;
         this.ctx.drawImage(img, 0, 0);
 
-        // Display original image
-        originalImage.src = img.src;
-        editedImage.src = img.src;
+        this.el.original.src = img.src;
+        this.clearEdited();
 
-        // Generate preset previews
-        this.generatePresetPreviews(img);
+        // Build the shared thumbnail source once per image.
+        const size = this.F.fitSize(img.naturalWidth, img.naturalHeight, 240);
+        const t = document.createElement('canvas');
+        t.width = size.width;
+        t.height = size.height;
+        const tctx = t.getContext('2d', { willReadFrequently: true });
+        tctx.drawImage(img, 0, 0, size.width, size.height);
+        this.thumbBase = tctx.getImageData(0, 0, size.width, size.height);
+        this.thumbCache.clear();
 
-        // Re-render presets with new previews
         this.loadedPresetsCount = 0;
         this.renderPresets();
+        this.updateControls();
 
-        // Scroll to presets section
         setTimeout(() => {
             document.getElementById('presets').scrollIntoView({ behavior: 'smooth' });
-        }, 500);
+        }, 300);
     }
 
-    bindEvents() {
-        // Filter buttons
-        const filterBtns = document.querySelectorAll('.filter-btn');
-        filterBtns.forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                // Update active filter
-                filterBtns.forEach(b => b.classList.remove('active'));
-                e.target.classList.add('active');
+    showUploadArea() {
+        this.currentImage = null;
+        this.currentPreset = null;
+        this.thumbBase = null;
+        this.thumbCache.clear();
+        this.clearEdited();
+        if (this.originalUrl) {
+            URL.revokeObjectURL(this.originalUrl);
+            this.originalUrl = null;
+        }
+        this.el.original.removeAttribute('src');
+        this.el.workspace.style.display = 'none';
+        this.el.uploadArea.style.display = '';
+        this.loadedPresetsCount = 0;
+        this.renderPresets();
+        this.updateControls();
+    }
 
-                // Filter presets
-                const category = e.target.dataset.category;
-                this.filterPresets(category);
+    // ---------- Events ----------
+
+    bindEvents() {
+        const filterBtns = document.querySelectorAll('.filter-btn');
+        filterBtns.forEach((btn) => {
+            btn.addEventListener('click', () => {
+                filterBtns.forEach((b) => b.classList.remove('active'));
+                btn.classList.add('active');
+                this.filterPresets(btn.dataset.category);
             });
         });
 
-        // Load more presets
-        const loadMoreBtn = document.getElementById('loadMorePresets');
-        if (loadMoreBtn) {
-            loadMoreBtn.addEventListener('click', () => {
-                this.loadMorePresets();
+        this.el.loadMore.addEventListener('click', () => this.renderPresets());
+        this.el.toggle.addEventListener('click', () => this.toggleImageComparison());
+        this.el.reset.addEventListener('click', () => this.resetImage());
+        this.el.download.addEventListener('click', () => this.downloadImage());
+        this.el.newImage.addEventListener('click', () => this.showUploadArea());
+
+        const demo = document.getElementById('sampleImage');
+        if (demo) {
+            demo.addEventListener('click', () => {
+                document.getElementById('editor').scrollIntoView({ behavior: 'smooth' });
+                this.loadSampleImage();
             });
         }
 
-        // Image controls
-        this.bindImageControls();
-
-        // Navigation
         this.bindNavigation();
     }
 
-    bindImageControls() {
-        const toggleBtn = document.getElementById('toggleView');
-        const resetBtn = document.getElementById('resetImage');
-        const downloadBtn = document.getElementById('downloadImage');
-
-        if (toggleBtn) {
-            toggleBtn.addEventListener('click', () => {
-                this.toggleImageComparison();
-            });
-        }
-
-        if (resetBtn) {
-            resetBtn.addEventListener('click', () => {
-                this.resetImage();
-            });
-        }
-
-        if (downloadBtn) {
-            downloadBtn.addEventListener('click', () => {
-                this.downloadImage();
-            });
-        }
-    }
-
     bindNavigation() {
-        // Smooth scroll for navigation links
         const navLinks = document.querySelectorAll('.nav-link');
-        navLinks.forEach(link => {
-            link.addEventListener('click', (e) => {
-                e.preventDefault();
-                const targetId = link.getAttribute('href');
-                const targetElement = document.querySelector(targetId);
-
-                if (targetElement) {
-                    targetElement.scrollIntoView({ behavior: 'smooth' });
-
-                    // Update active nav link
-                    navLinks.forEach(l => l.classList.remove('active'));
-                    link.classList.add('active');
-                }
-            });
-        });
-
-        // Mobile menu toggle
         const mobileToggle = document.querySelector('.mobile-toggle');
         const navMenu = document.querySelector('.nav-menu');
 
-        if (mobileToggle && navMenu) {
-            mobileToggle.addEventListener('click', () => {
-                navMenu.classList.toggle('active');
-                mobileToggle.classList.toggle('active');
+        const closeMenu = () => {
+            navMenu.classList.remove('active');
+            mobileToggle.classList.remove('active');
+            mobileToggle.setAttribute('aria-expanded', 'false');
+        };
+
+        document.querySelectorAll('a[href^="#"]').forEach((link) => {
+            link.addEventListener('click', (e) => {
+                const target = document.querySelector(link.getAttribute('href'));
+                if (!target) return;
+                e.preventDefault();
+                target.scrollIntoView({ behavior: 'smooth' });
+                closeMenu();
             });
-
-            // Close mobile menu when clicking outside
-            document.addEventListener('click', (e) => {
-                if (!mobileToggle.contains(e.target) && !navMenu.contains(e.target)) {
-                    navMenu.classList.remove('active');
-                    mobileToggle.classList.remove('active');
-                }
-            });
-
-            // Add touch support for mobile
-            document.addEventListener('touchstart', (e) => {
-                if (!mobileToggle.contains(e.target) && !navMenu.contains(e.target)) {
-                    navMenu.classList.remove('active');
-                    mobileToggle.classList.remove('active');
-                }
-            });
-        }
-    }
-
-    generatePresetPreviews(img) {
-        this.showLoading('Generating preset previews...');
-
-        // Create a smaller canvas for previews (for performance)
-        const previewCanvas = document.createElement('canvas');
-        const previewCtx = previewCanvas.getContext('2d');
-        const previewSize = 200; // Fixed size for previews
-
-        // Calculate dimensions maintaining aspect ratio
-        const aspectRatio = img.width / img.height;
-        let previewWidth, previewHeight;
-
-        if (aspectRatio > 1) {
-            previewWidth = previewSize;
-            previewHeight = previewSize / aspectRatio;
-        } else {
-            previewWidth = previewSize * aspectRatio;
-            previewHeight = previewSize;
-        }
-
-        previewCanvas.width = previewWidth;
-        previewCanvas.height = previewHeight;
-
-        // Generate previews for first 50 presets (for performance)
-        const presetsToPreview = this.presets.slice(0, 50);
-
-        presetsToPreview.forEach((preset, index) => {
-            setTimeout(() => {
-                // Clear and draw original image
-                previewCtx.clearRect(0, 0, previewWidth, previewHeight);
-                previewCtx.drawImage(img, 0, 0, previewWidth, previewHeight);
-
-                // Apply preset effect
-                const imageData = previewCtx.getImageData(0, 0, previewWidth, previewHeight);
-                const data = imageData.data;
-
-                // Apply simplified effects for preview
-                this.applyPreviewEffect(data, preset.settings);
-                previewCtx.putImageData(imageData, 0, 0);
-
-                // Store preview
-                preset.previewCanvas = previewCanvas.cloneNode();
-                preset.previewCanvas.getContext('2d').putImageData(imageData, 0, 0);
-
-                // Update the preset card if it's already rendered
-                const presetCard = document.querySelector(`[data-preset-id="${preset.id}"]`);
-                if (presetCard) {
-                    const previewDiv = presetCard.querySelector('.preset-preview');
-                    const existingImg = previewDiv.querySelector('img');
-                    if (existingImg) {
-                        existingImg.src = preset.previewCanvas.toDataURL();
-                    } else {
-                        const img = document.createElement('img');
-                        img.src = preset.previewCanvas.toDataURL();
-                        img.style.width = '100%';
-                        img.style.height = '100%';
-                        img.style.objectFit = 'cover';
-                        previewDiv.appendChild(img);
-                    }
-                }
-
-                // Hide loading when done with first batch
-                if (index === presetsToPreview.length - 1) {
-                    this.hideLoading();
-                }
-            }, index * 50); // Stagger generation to prevent blocking
         });
-    }
 
-    applyPreviewEffect(data, settings) {
-        // Simplified version of effects for preview generation
-        const brightness = settings.brightness || 0;
-        const contrast = settings.contrast || 0;
-        const saturation = settings.saturation || 0;
+        mobileToggle.addEventListener('click', () => {
+            const open = navMenu.classList.toggle('active');
+            mobileToggle.classList.toggle('active', open);
+            mobileToggle.setAttribute('aria-expanded', String(open));
+        });
+        document.addEventListener('click', (e) => {
+            if (!mobileToggle.contains(e.target) && !navMenu.contains(e.target)) closeMenu();
+        });
 
-        for (let i = 0; i < data.length; i += 4) {
-            let r = data[i];
-            let g = data[i + 1];
-            let b = data[i + 2];
-
-            // Apply brightness
-            r += brightness;
-            g += brightness;
-            b += brightness;
-
-            // Apply contrast
-            const contrastFactor = (259 * (contrast + 255)) / (255 * (259 - contrast));
-            r = contrastFactor * (r - 128) + 128;
-            g = contrastFactor * (g - 128) + 128;
-            b = contrastFactor * (b - 128) + 128;
-
-            // Apply saturation
-            if (saturation !== 0) {
-                const gray = 0.299 * r + 0.587 * g + 0.114 * b;
-                const sat = saturation / 100;
-                r = gray + sat * (r - gray);
-                g = gray + sat * (g - gray);
-                b = gray + sat * (b - gray);
-            }
-
-            // Clamp values
-            data[i] = Math.max(0, Math.min(255, r));
-            data[i + 1] = Math.max(0, Math.min(255, g));
-            data[i + 2] = Math.max(0, Math.min(255, b));
+        // Highlight the nav link of the section in view.
+        if ('IntersectionObserver' in window) {
+            const byId = new Map();
+            navLinks.forEach((l) => byId.set(l.getAttribute('href').slice(1), l));
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach((entry) => {
+                    if (!entry.isIntersecting) return;
+                    navLinks.forEach((l) => l.classList.remove('active'));
+                    const link = byId.get(entry.target.id);
+                    if (link) link.classList.add('active');
+                });
+            }, { rootMargin: '-45% 0px -50% 0px' });
+            byId.forEach((_, id) => {
+                const section = document.getElementById(id);
+                if (section) observer.observe(section);
+            });
         }
     }
+
+    // ---------- Presets grid ----------
 
     filterPresets(category) {
-        if (category === 'all') {
-            this.filteredPresets = [...this.presets];
-        } else {
-            this.filteredPresets = this.presets.filter(preset => preset.category === category);
-        }
-
+        this.activeCategory = category;
+        this.filteredPresets = category === 'all'
+            ? [...this.presets]
+            : this.presets.filter((p) => p.category === category);
         this.loadedPresetsCount = 0;
         this.renderPresets();
     }
 
     renderPresets() {
-        const presetsGrid = document.getElementById('presetsGrid');
-        const loadMoreBtn = document.getElementById('loadMorePresets');
+        const grid = this.el.grid;
+        if (this.loadedPresetsCount === 0) grid.innerHTML = '';
 
-        if (!presetsGrid) return;
-
-        // Clear grid if starting fresh
-        if (this.loadedPresetsCount === 0) {
-            presetsGrid.innerHTML = '';
+        const end = Math.min(this.loadedPresetsCount + this.presetsPerLoad, this.filteredPresets.length);
+        for (let i = this.loadedPresetsCount; i < end; i++) {
+            grid.appendChild(this.createPresetCard(this.filteredPresets[i]));
         }
+        this.loadedPresetsCount = end;
+        this.el.loadMore.style.display = end < this.filteredPresets.length ? '' : 'none';
+    }
 
-        // Calculate presets to show
-        const endIndex = Math.min(
-            this.loadedPresetsCount + this.presetsPerLoad,
-            this.filteredPresets.length
-        );
-
-        // Render new presets
-        for (let i = this.loadedPresetsCount; i < endIndex; i++) {
-            const preset = this.filteredPresets[i];
-            const presetCard = this.createPresetCard(preset);
-            presetsGrid.appendChild(presetCard);
+    getThumbnail(preset) {
+        if (!this.thumbBase) return null;
+        let canvas = this.thumbCache.get(preset.id);
+        if (!canvas) {
+            const { width, height, data } = this.thumbBase;
+            const copy = new ImageData(new Uint8ClampedArray(data), width, height);
+            this.F.applySettings(copy.data, width, height, preset.settings);
+            canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            canvas.getContext('2d').putImageData(copy, 0, 0);
+            this.thumbCache.set(preset.id, canvas);
         }
-
-        this.loadedPresetsCount = endIndex;
-
-        // Show/hide load more button
-        if (loadMoreBtn) {
-            loadMoreBtn.style.display = 
-                this.loadedPresetsCount < this.filteredPresets.length ? 'block' : 'none';
-        }
+        return canvas;
     }
 
     createPresetCard(preset) {
         const card = document.createElement('div');
         card.className = 'preset-card';
         card.dataset.presetId = preset.id;
+        card.tabIndex = 0;
+        card.setAttribute('role', 'button');
+        card.setAttribute('aria-label', `Apply preset ${preset.name}`);
+        if (this.currentPreset && this.currentPreset.id === preset.id) card.classList.add('selected');
 
-        // Create preview content
-        let previewContent = '';
-        if (preset.previewCanvas) {
-            previewContent = `<img src="${preset.previewCanvas.toDataURL()}" style="width: 100%; height: 100%; object-fit: cover;" alt="${preset.name} preview">`;
-        } else if (this.currentImage) {
-            previewContent = `<img src="${this.currentImage.src}" style="width: 100%; height: 100%; object-fit: cover; filter: ${this.getPreviewFilter(preset.settings)};" alt="${preset.name} preview">`;
+        const preview = document.createElement('div');
+        preview.className = 'preset-preview';
+        const thumb = this.getThumbnail(preset);
+        if (thumb) {
+            preview.appendChild(thumb);
         } else {
-            previewContent = `<div style="background: ${preset.thumbnail}; width: 100%; height: 100%;"></div>`;
+            const swatch = document.createElement('div');
+            swatch.className = 'preset-swatch';
+            swatch.style.background = preset.thumbnail;
+            preview.appendChild(swatch);
         }
+        const overlay = document.createElement('div');
+        overlay.className = 'preset-overlay';
+        const apply = document.createElement('span');
+        apply.className = 'preset-apply';
+        apply.textContent = 'Apply Preset';
+        overlay.appendChild(apply);
+        preview.appendChild(overlay);
 
-        card.innerHTML = `
-            <div class="preset-preview">
-                ${previewContent}
-                <div class="preset-overlay">
-                    <button class="preset-apply">
-                        Apply Preset
-                    </button>
-                </div>
-            </div>
-            <div class="preset-info">
-                <h3 class="preset-name">${preset.name}</h3>
-                <p class="preset-category">${preset.category}</p>
-            </div>
-        `;
+        const info = document.createElement('div');
+        info.className = 'preset-info';
+        const name = document.createElement('h3');
+        name.className = 'preset-name';
+        name.textContent = preset.name;
+        const cat = document.createElement('p');
+        cat.className = 'preset-category';
+        cat.textContent = preset.category;
+        info.append(name, cat);
 
-        // Add click event listener to the apply button
-        const applyButton = card.querySelector('.preset-apply');
-        applyButton.addEventListener('click', (e) => {
-            e.stopPropagation();
-            this.applyPreset(preset.id);
+        card.append(preview, info);
+        card.addEventListener('click', () => this.applyPreset(preset.id));
+        card.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                this.applyPreset(preset.id);
+            }
         });
-
-        // Also add click event to the entire card
-        card.addEventListener('click', () => {
-            this.applyPreset(preset.id);
-        });
-
         return card;
     }
 
-    getPreviewFilter(settings) {
-        // Generate CSS filter as fallback for quick preview
-        const brightness = 100 + (settings.brightness || 0);
-        const contrast = 100 + (settings.contrast || 0);
-        const saturate = 100 + (settings.saturation || 0);
-        const hueRotate = settings.hue || 0;
+    // ---------- Editing ----------
 
-        return `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturate}%) hue-rotate(${hueRotate}deg)`;
-    }
-
-    loadMorePresets() {
-        this.renderPresets();
-
-        // Add loading animation
-        this.showLoading('Loading more presets...');
-        setTimeout(() => {
-            this.hideLoading();
-        }, 800);
-    }
-
-    applyPreset(presetId) {
+    async applyPreset(presetId) {
         if (!this.currentImage) {
-            alert('Please upload an image first!');
+            this.showErrorMessage('Please upload an image first!');
+            document.getElementById('editor').scrollIntoView({ behavior: 'smooth' });
             return;
         }
-
-        const preset = this.presets.find(p => p.id === presetId);
+        if (this.busy) return;
+        const preset = this.presets.find((p) => p.id === presetId);
         if (!preset) return;
 
+        this.busy = true;
         this.showLoading('Applying preset...');
-
-        // Simulate processing time for better UX
-        setTimeout(() => {
-            this.processImageWithPreset(preset);
-            this.currentPreset = preset;
-            this.hideLoading();
-        }, 1200);
-    }
-
-    processImageWithPreset(preset) {
+        // Let the overlay paint before the (blocking) pixel work.
+        await new Promise((resolve) => requestAnimationFrame(() => setTimeout(resolve, 0)));
         try {
-            const { settings } = preset;
-
-            // Ensure canvas dimensions match image
-            this.canvas.width = this.currentImage.width;
-            this.canvas.height = this.currentImage.height;
-
-            // Clear canvas and redraw original image
-            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            const { naturalWidth: w, naturalHeight: h } = this.currentImage;
+            this.canvas.width = w;
+            this.canvas.height = h;
             this.ctx.drawImage(this.currentImage, 0, 0);
-
-            // Get image data for pixel manipulation
-            let imageData;
-            try {
-                imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
-            } catch (error) {
-                console.error('Error getting image data:', error);
-                this.showErrorMessage('Unable to process image. Please try a different image.');
-                return;
-            }
-
-            const data = imageData.data;
-
-            // Apply filters with error handling
-            this.applyBrightnessContrast(data, settings.brightness || 0, settings.contrast || 0);
-            this.applySaturation(data, settings.saturation || 0);
-            this.applyHueShift(data, settings.hue || 0);
-            this.applyWarmth(data, settings.warmth || 0);
-
-            // Put processed data back to canvas
+            const imageData = this.ctx.getImageData(0, 0, w, h);
+            this.F.applySettings(imageData.data, w, h, preset.settings);
             this.ctx.putImageData(imageData, 0, 0);
 
-            // Apply additional effects
-            this.applyVignette(settings.vignette || 0);
-            this.applyGrain(settings.grain || 0);
+            const blob = await new Promise((resolve) => this.canvas.toBlob(resolve, 'image/jpeg', 0.92));
+            if (!blob) throw new Error('Could not encode image');
+            this.clearEdited();
+            this.editedUrl = URL.createObjectURL(blob);
+            this.el.edited.src = this.editedUrl;
 
-            // Update edited image
-            const editedImage = document.getElementById('editedImage');
-            editedImage.src = this.canvas.toDataURL('image/jpeg', 0.9);
-            editedImage.style.display = 'block';
-
-            // Show comparison
-            this.showImageComparison();
-
-            // Show success message
+            this.currentPreset = preset;
+            this.showingEdited = true;
+            this.updateControls();
+            document.querySelectorAll('.preset-card.selected').forEach((c) => c.classList.remove('selected'));
+            const card = this.el.grid.querySelector(`[data-preset-id="${preset.id}"]`);
+            if (card) card.classList.add('selected');
             this.showSuccessMessage(`Applied preset: ${preset.name}`);
         } catch (error) {
-            console.error('Error processing image:', error);
+            console.error('Error applying preset:', error);
             this.showErrorMessage('Failed to apply preset. Please try again.');
+        } finally {
+            this.busy = false;
+            this.hideLoading();
         }
     }
 
-    applyBrightnessContrast(data, brightness, contrast) {
-        const factor = (259 * (contrast + 255)) / (255 * (259 - contrast));
-
-        for (let i = 0; i < data.length; i += 4) {
-            // Apply brightness
-            data[i] = Math.max(0, Math.min(255, data[i] + brightness));
-            data[i + 1] = Math.max(0, Math.min(255, data[i + 1] + brightness));
-            data[i + 2] = Math.max(0, Math.min(255, data[i + 2] + brightness));
-
-            // Apply contrast
-            data[i] = Math.max(0, Math.min(255, factor * (data[i] - 128) + 128));
-            data[i + 1] = Math.max(0, Math.min(255, factor * (data[i + 1] - 128) + 128));
-            data[i + 2] = Math.max(0, Math.min(255, factor * (data[i + 2] - 128) + 128));
+    clearEdited() {
+        if (this.editedUrl) {
+            URL.revokeObjectURL(this.editedUrl);
+            this.editedUrl = null;
         }
-    }
-
-    applySaturation(data, saturation) {
-        const sat = saturation / 100;
-
-        for (let i = 0; i < data.length; i += 4) {
-            const r = data[i];
-            const g = data[i + 1];
-            const b = data[i + 2];
-
-            const gray = 0.299 * r + 0.587 * g + 0.114 * b;
-
-            data[i] = Math.max(0, Math.min(255, gray + sat * (r - gray)));
-            data[i + 1] = Math.max(0, Math.min(255, gray + sat * (g - gray)));
-            data[i + 2] = Math.max(0, Math.min(255, gray + sat * (b - gray)));
-        }
-    }
-
-    applyHueShift(data, hueShift) {
-        const hue = hueShift * Math.PI / 180;
-        const cosHue = Math.cos(hue);
-        const sinHue = Math.sin(hue);
-
-        for (let i = 0; i < data.length; i += 4) {
-            const r = data[i] / 255;
-            const g = data[i + 1] / 255;
-            const b = data[i + 2] / 255;
-
-            const newR = r * (0.299 + 0.701 * cosHue + 0.168 * sinHue) +
-                        g * (0.587 - 0.587 * cosHue + 0.330 * sinHue) +
-                        b * (0.114 - 0.114 * cosHue - 0.497 * sinHue);
-
-            const newG = r * (0.299 - 0.299 * cosHue - 0.328 * sinHue) +
-                        g * (0.587 + 0.413 * cosHue + 0.035 * sinHue) +
-                        b * (0.114 - 0.114 * cosHue + 0.292 * sinHue);
-
-            const newB = r * (0.299 - 0.300 * cosHue + 1.25 * sinHue) +
-                        g * (0.587 - 0.588 * cosHue - 1.05 * sinHue) +
-                        b * (0.114 + 0.886 * cosHue - 0.203 * sinHue);
-
-            data[i] = Math.max(0, Math.min(255, newR * 255));
-            data[i + 1] = Math.max(0, Math.min(255, newG * 255));
-            data[i + 2] = Math.max(0, Math.min(255, newB * 255));
-        }
-    }
-
-    applyWarmth(data, warmth) {
-        const warmthFactor = warmth / 100;
-
-        for (let i = 0; i < data.length; i += 4) {
-            if (warmthFactor > 0) {
-                data[i] = Math.min(255, data[i] + warmthFactor * 20); // More red
-                data[i + 1] = Math.min(255, data[i + 1] + warmthFactor * 10); // Slight green
-                data[i + 2] = Math.max(0, data[i + 2] - warmthFactor * 15); // Less blue
-            } else {
-                data[i] = Math.max(0, data[i] + warmthFactor * 15); // Less red
-                data[i + 1] = Math.max(0, data[i + 1] + warmthFactor * 5); // Less green
-                data[i + 2] = Math.min(255, data[i + 2] - warmthFactor * 20); // More blue
-            }
-        }
-    }
-
-    applyVignette(strength) {
-        if (strength <= 0) return;
-
-        const centerX = this.canvas.width / 2;
-        const centerY = this.canvas.height / 2;
-        const maxDistance = Math.sqrt(centerX * centerX + centerY * centerY);
-
-        const gradient = this.ctx.createRadialGradient(
-            centerX, centerY, 0,
-            centerX, centerY, maxDistance
-        );
-
-        gradient.addColorStop(0, `rgba(0, 0, 0, 0)`);
-        gradient.addColorStop(1, `rgba(0, 0, 0, ${strength / 100})`);
-
-        this.ctx.globalCompositeOperation = 'multiply';
-        this.ctx.fillStyle = gradient;
-        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-        this.ctx.globalCompositeOperation = 'source-over';
-    }
-
-    applyGrain(strength) {
-        if (strength <= 0) return;
-
-        const imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
-        const data = imageData.data;
-
-        for (let i = 0; i < data.length; i += 4) {
-            const noise = (Math.random() - 0.5) * strength * 2;
-            data[i] += noise;
-            data[i + 1] += noise;
-            data[i + 2] += noise;
-        }
-
-        this.ctx.putImageData(imageData, 0, 0);
-    }
-
-    showImageComparison() {
-        const originalImage = document.getElementById('originalImage');
-        const editedImage = document.getElementById('editedImage');
-
-        originalImage.style.display = 'block';
-        editedImage.style.display = 'block';
-        editedImage.style.opacity = '1';
+        this.el.edited.removeAttribute('src');
+        this.showingEdited = false;
     }
 
     toggleImageComparison() {
-        const originalImage = document.getElementById('originalImage');
-        const editedImage = document.getElementById('editedImage');
-        const toggleBtn = document.getElementById('toggleView');
-
-        if (editedImage.style.opacity === '0') {
-            editedImage.style.opacity = '1';
-            toggleBtn.innerHTML = '<i class="fas fa-eye-slash"></i> Hide Edit';
-        } else {
-            editedImage.style.opacity = '0';
-            toggleBtn.innerHTML = '<i class="fas fa-eye"></i> Show Edit';
+        if (!this.currentPreset) {
+            this.showErrorMessage('Apply a preset first to compare.');
+            return;
         }
+        this.showingEdited = !this.showingEdited;
+        this.updateControls();
+    }
+
+    updateControls() {
+        const hasEdit = !!this.currentPreset;
+        this.el.edited.style.opacity = hasEdit && this.showingEdited ? '1' : '0';
+        this.el.toggle.setAttribute('aria-pressed', String(hasEdit && !this.showingEdited));
+        const showOriginalLabel = hasEdit && !this.showingEdited;
+        this.el.toggle.innerHTML = showOriginalLabel
+            ? '<i class="fas fa-eye-slash"></i> Show Edit'
+            : '<i class="fas fa-eye"></i> Compare';
+        this.el.toggle.title = showOriginalLabel ? 'Show the edited image' : 'Show the original image';
     }
 
     resetImage() {
         if (!this.currentImage) return;
-
-        const originalImage = document.getElementById('originalImage');
-        const editedImage = document.getElementById('editedImage');
-
-        editedImage.src = originalImage.src;
-        editedImage.style.opacity = '0';
-
         this.currentPreset = null;
-
-        // Reset canvas
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.clearEdited();
+        this.canvas.width = this.currentImage.naturalWidth;
+        this.canvas.height = this.currentImage.naturalHeight;
         this.ctx.drawImage(this.currentImage, 0, 0);
+        document.querySelectorAll('.preset-card.selected').forEach((c) => c.classList.remove('selected'));
+        this.updateControls();
     }
 
     downloadImage() {
         if (!this.currentImage) {
-            alert('No image to download!');
+            this.showErrorMessage('No image to download! Upload one first.');
             return;
         }
-
-        const link = document.createElement('a');
-        const filename = this.currentPreset ? 
-            `edited-${this.currentPreset.name.toLowerCase().replace(/\s+/g, '-')}.png` : 
-            'edited-image.png';
-
-        link.download = filename;
-        link.href = this.canvas.toDataURL();
-        link.click();
-
-        // Show success message
-        this.showSuccessMessage('Image downloaded successfully!');
+        const filename = this.currentPreset
+            ? `edited-${this.currentPreset.name.toLowerCase().replace(/\s+/g, '-')}.png`
+            : 'edited-image.png';
+        this.canvas.toBlob((blob) => {
+            if (!blob) {
+                this.showErrorMessage('Failed to export the image.');
+                return;
+            }
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = url;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+            this.showSuccessMessage('Image downloaded successfully!');
+        }, 'image/png');
     }
 
-    showLoading(message = 'Loading...') {
-        const overlay = document.getElementById('loadingOverlay');
-        const text = overlay.querySelector('p');
+    // ---------- Feedback ----------
 
-        text.textContent = message;
-        overlay.classList.add('active');
+    showLoading(message = 'Loading...') {
+        this.el.overlay.querySelector('p').textContent = message;
+        this.el.overlay.classList.add('active');
     }
 
     hideLoading() {
-        const overlay = document.getElementById('loadingOverlay');
-        overlay.classList.remove('active');
+        this.el.overlay.classList.remove('active');
     }
 
     showSuccessMessage(message) {
@@ -804,158 +505,31 @@ class PresetPro {
     }
 
     showNotification(message, type = 'success') {
-        // Create notification
-        const notification = document.createElement('div');
-        const isSuccess = type === 'success';
-        const bgColor = isSuccess ? 'linear-gradient(135deg, #10b981, #059669)' : 'linear-gradient(135deg, #ef4444, #dc2626)';
-        const icon = isSuccess ? 'fa-check-circle' : 'fa-exclamation-circle';
-
-        notification.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: ${bgColor};
-            color: white;
-            padding: 16px 24px;
-            border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-            z-index: 10000;
-            animation: slideIn 0.3s ease-out;
-            font-weight: 500;
-            max-width: 300px;
-        `;
-
-        notification.innerHTML = `
-            <i class="fas ${icon}" style="margin-right: 8px;"></i>
-            ${message}
-        `;
-
-        document.body.appendChild(notification);
-
-        // Remove after 3 seconds
+        const note = document.createElement('div');
+        note.className = `notification ${type}`;
+        note.setAttribute('role', type === 'error' ? 'alert' : 'status');
+        const icon = document.createElement('i');
+        icon.className = `fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}`;
+        note.append(icon, document.createTextNode(` ${message}`));
+        document.body.appendChild(note);
         setTimeout(() => {
-            notification.style.animation = 'slideOut 0.3s ease-in';
-            setTimeout(() => {
-                if (document.body.contains(notification)) {
-                    document.body.removeChild(notification);
-                }
-            }, 300);
+            note.classList.add('leaving');
+            setTimeout(() => note.remove(), 300);
         }, 3000);
     }
 }
 
-// Global functions
 function scrollToEditor() {
-    const editorSection = document.getElementById('editor');
-    if (editorSection) {
-        editorSection.scrollIntoView({ behavior: 'smooth' });
-    }
+    const editor = document.getElementById('editor');
+    if (editor) editor.scrollIntoView({ behavior: 'smooth' });
 }
-
-// Initialize the application
-let presetPro;
 
 function initializeApp() {
-    if (!presetPro) {
-        presetPro = new PresetPro();
-        window.presetPro = presetPro;
-    }
+    if (!window.pixelForge) window.pixelForge = new PixelForge();
 }
 
-// Initialize when DOM is ready
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initializeApp);
 } else {
     initializeApp();
-}
-
-// Add CSS animations
-const style = document.createElement('style');
-style.textContent = `
-    @keyframes slideIn {
-        from {
-            transform: translateX(100%);
-            opacity: 0;
-        }
-        to {
-            transform: translateX(0);
-            opacity: 1;
-        }
-    }
-
-    @keyframes slideOut {
-        from {
-            transform: translateX(0);
-            opacity: 1;
-        }
-        to {
-            transform: translateX(100%);
-            opacity: 0;
-        }
-    }
-
-    .image-preview img {
-        transition: opacity 0.3s ease-in-out;
-    }
-
-    .preset-card {
-        cursor: pointer;
-    }
-
-    .preset-card:active {
-        transform: translateY(-4px) scale(0.98);
-    }
-
-    @media (max-width: 768px) {
-        .nav-menu.active {
-            display: flex;
-            position: absolute;
-            top: 100%;
-            left: 0;
-            right: 0;
-            background: rgba(15, 15, 35, 0.98);
-            backdrop-filter: blur(20px);
-            flex-direction: column;
-            padding: 20px;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-        }
-    }
-`;
-
-document.head.appendChild(style);
-
-// Performance optimizations
-function initializeOptimizations() {
-    // Lazy load images
-    if ('IntersectionObserver' in window) {
-        const observerOptions = {
-            threshold: 0.1,
-            rootMargin: '50px'
-        };
-
-        const imageObserver = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    const img = entry.target;
-                    if (img.dataset.src) {
-                        img.src = img.dataset.src;
-                        img.removeAttribute('data-src');
-                        imageObserver.unobserve(img);
-                    }
-                }
-            });
-        }, observerOptions);
-
-        // Observe all images with data-src
-        document.querySelectorAll('img[data-src]').forEach(img => {
-            imageObserver.observe(img);
-        });
-    }
-}
-
-// Initialize optimizations
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initializeOptimizations);
-} else {
-    initializeOptimizations();
 }
