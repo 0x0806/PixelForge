@@ -92,7 +92,7 @@ class PixelForge {
         this.loadImageFromUrl(URL.createObjectURL(file), true);
     }
 
-    loadImageFromUrl(url, isObjectUrl) {
+    loadImageFromUrl(url, isObjectUrl, options = {}) {
         this.showLoading('Loading your image...');
         const img = new Image();
         img.onload = () => {
@@ -104,8 +104,9 @@ class PixelForge {
             }
             if (this.originalUrl) URL.revokeObjectURL(this.originalUrl);
             this.originalUrl = isObjectUrl ? url : null;
-            this.setupImageWorkspace(img);
+            this.setupImageWorkspace(img, options.scroll !== false);
             this.hideLoading();
+            if (options.onLoaded) options.onLoaded();
         };
         img.onerror = () => {
             if (isObjectUrl) URL.revokeObjectURL(url);
@@ -115,47 +116,27 @@ class PixelForge {
         img.src = url;
     }
 
-    /** Draws a generated landscape so the editor can be tried without a file. */
-    loadSampleImage() {
-        const c = document.createElement('canvas');
-        c.width = 960;
-        c.height = 640;
-        const x = c.getContext('2d');
-        const sky = x.createLinearGradient(0, 0, 0, 400);
-        sky.addColorStop(0, '#3b6fb6');
-        sky.addColorStop(0.6, '#f4b183');
-        sky.addColorStop(1, '#fde7c4');
-        x.fillStyle = sky;
-        x.fillRect(0, 0, 960, 640);
-        x.fillStyle = '#fff3b0';
-        x.beginPath();
-        x.arc(680, 300, 70, 0, Math.PI * 2);
-        x.fill();
-        const hills = [['#6b8f71', 420, 90], ['#3f6b4f', 480, 70], ['#27493a', 540, 50]];
-        hills.forEach(([color, base, amp], n) => {
-            x.fillStyle = color;
-            x.beginPath();
-            x.moveTo(0, 640);
-            for (let px = 0; px <= 960; px += 10) {
-                x.lineTo(px, base + Math.sin(px / (110 + n * 40) + n * 2) * amp * 0.5);
-            }
-            x.lineTo(960, 640);
-            x.closePath();
-            x.fill();
-        });
-        x.fillStyle = '#c0392b';
-        x.fillRect(180, 470, 70, 60);
-        x.fillStyle = '#7b241c';
-        x.beginPath();
-        x.moveTo(170, 470);
-        x.lineTo(215, 430);
-        x.lineTo(260, 470);
-        x.closePath();
-        x.fill();
-        this.loadImageFromUrl(c.toDataURL('image/png'), false);
+    /** Loads the generated sample photo so the editor can be tried without a file. */
+    loadSampleImage(options) {
+        const c = window.PixelForgeSample.draw(960, 640);
+        this.loadImageFromUrl(c.toDataURL('image/png'), false, options);
     }
 
-    setupImageWorkspace(img) {
+    /**
+     * Opens a preset from outside the editor (the hero prints). Uses the visitor's
+     * own photo if one is loaded, otherwise the sample photo.
+     */
+    openPreset(presetId) {
+        if (this.busy) return;
+        document.getElementById('editor').scrollIntoView({ behavior: 'smooth' });
+        if (this.currentImage) {
+            this.applyPreset(presetId);
+        } else {
+            this.loadSampleImage({ scroll: false, onLoaded: () => this.applyPreset(presetId) });
+        }
+    }
+
+    setupImageWorkspace(img, scroll = true) {
         this.currentImage = img;
         this.currentPreset = null;
         this.showingEdited = false;
@@ -184,9 +165,11 @@ class PixelForge {
         this.renderPresets();
         this.updateControls();
 
-        setTimeout(() => {
-            document.getElementById('presets').scrollIntoView({ behavior: 'smooth' });
-        }, 300);
+        if (scroll) {
+            setTimeout(() => {
+                document.getElementById('presets').scrollIntoView({ behavior: 'smooth' });
+            }, 300);
+        }
     }
 
     showUploadArea() {
@@ -229,7 +212,7 @@ class PixelForge {
         if (demo) {
             demo.addEventListener('click', () => {
                 document.getElementById('editor').scrollIntoView({ behavior: 'smooth' });
-                this.loadSampleImage();
+                this.loadSampleImage({ scroll: false });
             });
         }
 
@@ -265,6 +248,16 @@ class PixelForge {
         document.addEventListener('click', (e) => {
             if (!mobileToggle.contains(e.target) && !navMenu.contains(e.target)) closeMenu();
         });
+
+        // The header is transparent over the hero and solid once you scroll past it.
+        const header = document.getElementById('siteHeader');
+        const hero = document.getElementById('home');
+        if (header && hero) {
+            const update = () => header.classList.toggle('solid', window.scrollY > hero.offsetHeight - 72);
+            window.addEventListener('scroll', update, { passive: true });
+            window.addEventListener('resize', update);
+            update();
+        }
 
         // Highlight the nav link of the section in view.
         if ('IntersectionObserver' in window) {
@@ -328,9 +321,10 @@ class PixelForge {
         const card = document.createElement('div');
         card.className = 'preset-card';
         card.dataset.presetId = preset.id;
+        card.dataset.category = preset.category;
         card.tabIndex = 0;
         card.setAttribute('role', 'button');
-        card.setAttribute('aria-label', `Apply preset ${preset.name}`);
+        card.setAttribute('aria-label', `Apply look ${preset.name}`);
         if (this.currentPreset && this.currentPreset.id === preset.id) card.classList.add('selected');
 
         const preview = document.createElement('div');
@@ -348,7 +342,7 @@ class PixelForge {
         overlay.className = 'preset-overlay';
         const apply = document.createElement('span');
         apply.className = 'preset-apply';
-        apply.textContent = 'Apply Preset';
+        apply.textContent = 'Apply look';
         overlay.appendChild(apply);
         preview.appendChild(overlay);
 
@@ -359,7 +353,7 @@ class PixelForge {
         name.textContent = preset.name;
         const cat = document.createElement('p');
         cat.className = 'preset-category';
-        cat.textContent = preset.category;
+        cat.textContent = this.F.CATEGORIES.find((c) => c.id === preset.category).label;
         info.append(name, cat);
 
         card.append(preview, info);
@@ -377,7 +371,7 @@ class PixelForge {
 
     async applyPreset(presetId) {
         if (!this.currentImage) {
-            this.showErrorMessage('Please upload an image first!');
+            this.showErrorMessage('Add a photo first, or use the sample photo.');
             document.getElementById('editor').scrollIntoView({ behavior: 'smooth' });
             return;
         }
@@ -386,7 +380,7 @@ class PixelForge {
         if (!preset) return;
 
         this.busy = true;
-        this.showLoading('Applying preset...');
+        this.showLoading('Applying look...');
         // Let the overlay paint before the (blocking) pixel work.
         await new Promise((resolve) => requestAnimationFrame(() => setTimeout(resolve, 0)));
         try {
@@ -410,10 +404,10 @@ class PixelForge {
             document.querySelectorAll('.preset-card.selected').forEach((c) => c.classList.remove('selected'));
             const card = this.el.grid.querySelector(`[data-preset-id="${preset.id}"]`);
             if (card) card.classList.add('selected');
-            this.showSuccessMessage(`Applied preset: ${preset.name}`);
+            this.showSuccessMessage(`Applied look: ${preset.name}`);
         } catch (error) {
-            console.error('Error applying preset:', error);
-            this.showErrorMessage('Failed to apply preset. Please try again.');
+            console.error('Error applying look:', error);
+            this.showErrorMessage('Could not apply the look. Try again.');
         } finally {
             this.busy = false;
             this.hideLoading();
@@ -431,7 +425,7 @@ class PixelForge {
 
     toggleImageComparison() {
         if (!this.currentPreset) {
-            this.showErrorMessage('Apply a preset first to compare.');
+            this.showErrorMessage('Pick a look first, then compare.');
             return;
         }
         this.showingEdited = !this.showingEdited;
@@ -443,9 +437,7 @@ class PixelForge {
         this.el.edited.style.opacity = hasEdit && this.showingEdited ? '1' : '0';
         this.el.toggle.setAttribute('aria-pressed', String(hasEdit && !this.showingEdited));
         const showOriginalLabel = hasEdit && !this.showingEdited;
-        this.el.toggle.innerHTML = showOriginalLabel
-            ? '<i class="fas fa-eye-slash"></i> Show Edit'
-            : '<i class="fas fa-eye"></i> Compare';
+        this.el.toggle.textContent = showOriginalLabel ? 'Show edit' : 'Compare';
         this.el.toggle.title = showOriginalLabel ? 'Show the edited image' : 'Show the original image';
     }
 
@@ -508,9 +500,7 @@ class PixelForge {
         const note = document.createElement('div');
         note.className = `notification ${type}`;
         note.setAttribute('role', type === 'error' ? 'alert' : 'status');
-        const icon = document.createElement('i');
-        icon.className = `fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}`;
-        note.append(icon, document.createTextNode(` ${message}`));
+        note.textContent = message;
         document.body.appendChild(note);
         setTimeout(() => {
             note.classList.add('leaving');

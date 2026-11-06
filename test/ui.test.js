@@ -37,7 +37,7 @@ test('browser: upload, filter, apply, compare, reset, download, new image', { sk
     const png = path.join(tmp, 'photo.png');
     makePng(png);
 
-    const browser = await chromium.launch({ executablePath: exe, args: ['--no-sandbox'] });
+    const browser = await chromium.launch({ executablePath: exe, args: ['--no-sandbox', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
     t.after(async () => { await browser.close(); fs.rmSync(tmp, { recursive: true, force: true }); });
     const ctx = await browser.newContext({ acceptDownloads: true });
     // CDN fonts/icons are cosmetic; keep the test hermetic.
@@ -49,6 +49,15 @@ test('browser: upload, filter, apply, compare, reset, download, new image', { sk
 
     await page.goto('file://' + path.join(__dirname, '..', 'index.html'));
 
+    // Hero: seven keyboard-reachable prints; three.js or the documented fallback ran
+    const heroMode = await page.evaluate(() => document.documentElement.dataset.hero);
+    assert.ok(['webgl', 'fallback'].includes(heroMode), `hero mode: ${heroMode}`);
+    assert.equal(await page.locator('.print-btn').count(), 7);
+    if (heroMode === 'webgl') {
+        const size = await page.evaluate(() => { const c = document.getElementById('heroCanvas'); return [c.width, c.height]; });
+        assert.ok(size[0] > 100 && size[1] > 100);
+    }
+
     // Initial state
     assert.equal(await page.locator('.filter-btn').count(), 13);
     assert.equal(await page.locator('.preset-card').count(), 12);
@@ -58,11 +67,22 @@ test('browser: upload, filter, apply, compare, reset, download, new image', { sk
     // Filtering by every category yields cards of that category only
     for (const cat of await page.locator('.filter-btn').evaluateAll((b) => b.map((x) => x.dataset.category))) {
         await page.click(`.filter-btn[data-category="${cat}"]`);
-        const cats = await page.locator('.preset-category').evaluateAll((e) => [...new Set(e.map((x) => x.textContent))]);
+        const cats = await page.locator('.preset-card').evaluateAll((e) => [...new Set(e.map((x) => x.dataset.category))]);
         assert.ok(cats.length >= 1, cat);
         if (cat !== 'all') assert.deepEqual(cats, [cat]);
     }
     await page.click('.filter-btn[data-category="all"]');
+
+    // Clicking a hero print with no photo loaded opens the sample photo with that look applied
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.locator('.print-btn').nth(2).dispatchEvent('click');
+    await page.waitForSelector('.notification.success');
+    await page.waitForSelector('#imageWorkspace', { state: 'visible' });
+    assert.equal(await page.evaluate(() => document.getElementById('originalImage').naturalWidth), 960);
+    assert.equal(await page.evaluate(() => document.getElementById('editedImage').hasAttribute('src')), true);
+    await page.click('#newImage');
+    await page.waitForSelector('#uploadArea', { state: 'visible' });
+    await page.evaluate(() => document.querySelectorAll('.notification').forEach((n) => n.remove()));
 
     // Applying with no image gives an error toast, not an alert
     await page.locator('.preset-card').first().click();
@@ -134,5 +154,25 @@ test('browser: upload, filter, apply, compare, reset, download, new image', { sk
     await page.click('.mobile-toggle');
     assert.ok(await page.locator('.nav-menu.active').count());
 
+    assert.deepEqual(errors, []);
+});
+
+test('browser: hero falls back to a printed row when WebGL is unavailable', { skip }, async (t) => {
+    const browser = await chromium.launch({ executablePath: exe, args: ['--no-sandbox', '--disable-gpu', '--disable-webgl', '--disable-3d-apis'] });
+    t.after(() => browser.close());
+    const page = await (await browser.newContext({ viewport: { width: 1440, height: 800 } })).newPage();
+    await page.route(/^https?:/, (r) => r.abort());
+    const errors = [];
+    page.on('pageerror', (e) => errors.push(e.message));
+    await page.goto('file://' + path.join(__dirname, '..', 'index.html'));
+    await page.waitForFunction(() => document.documentElement.dataset.hero);
+    assert.equal(await page.evaluate(() => document.documentElement.dataset.hero), 'fallback');
+    assert.equal(await page.locator('.print-btn canvas').count(), 7);
+    // The printed row must not run into the headline.
+    const rowBottom = await page.evaluate(() => document.getElementById('heroPrints').getBoundingClientRect().bottom);
+    const titleTop = await page.evaluate(() => document.querySelector('.hero-title').getBoundingClientRect().top);
+    assert.ok(rowBottom <= titleTop, `prints (${rowBottom}) overlap headline (${titleTop})`);
+    await page.locator('.print-btn').nth(0).click();
+    await page.waitForSelector('#imageWorkspace', { state: 'visible' });
     assert.deepEqual(errors, []);
 });
