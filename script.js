@@ -324,7 +324,7 @@ class PixelForge {
         card.dataset.category = preset.category;
         card.tabIndex = 0;
         card.setAttribute('role', 'button');
-        card.setAttribute('aria-label', `Apply preset ${preset.name}`);
+        card.setAttribute('aria-label', `Apply look ${preset.name}`);
         if (this.currentPreset && this.currentPreset.id === preset.id) card.classList.add('selected');
 
         const preview = document.createElement('div');
@@ -342,7 +342,7 @@ class PixelForge {
         overlay.className = 'preset-overlay';
         const apply = document.createElement('span');
         apply.className = 'preset-apply';
-        apply.textContent = 'Apply Preset';
+        apply.textContent = 'Apply look';
         overlay.appendChild(apply);
         preview.appendChild(overlay);
 
@@ -380,7 +380,7 @@ class PixelForge {
         if (!preset) return;
 
         this.busy = true;
-        this.showLoading('Applying preset...');
+        this.showLoading('Applying look...');
         // Let the overlay paint before the (blocking) pixel work.
         await new Promise((resolve) => requestAnimationFrame(() => setTimeout(resolve, 0)));
         try {
@@ -404,10 +404,10 @@ class PixelForge {
             document.querySelectorAll('.preset-card.selected').forEach((c) => c.classList.remove('selected'));
             const card = this.el.grid.querySelector(`[data-preset-id="${preset.id}"]`);
             if (card) card.classList.add('selected');
-            this.showSuccessMessage(`Applied preset: ${preset.name}`);
+            this.showSuccessMessage(`Applied look: ${preset.name}`);
         } catch (error) {
-            console.error('Error applying preset:', error);
-            this.showErrorMessage('Failed to apply preset. Please try again.');
+            console.error('Error applying look:', error);
+            this.showErrorMessage('Could not apply the look. Try again.');
         } finally {
             this.busy = false;
             this.hideLoading();

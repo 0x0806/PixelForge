@@ -156,3 +156,23 @@ test('browser: upload, filter, apply, compare, reset, download, new image', { sk
 
     assert.deepEqual(errors, []);
 });
+
+test('browser: hero falls back to a printed row when WebGL is unavailable', { skip }, async (t) => {
+    const browser = await chromium.launch({ executablePath: exe, args: ['--no-sandbox', '--disable-gpu', '--disable-webgl', '--disable-3d-apis'] });
+    t.after(() => browser.close());
+    const page = await (await browser.newContext({ viewport: { width: 1440, height: 800 } })).newPage();
+    await page.route(/^https?:/, (r) => r.abort());
+    const errors = [];
+    page.on('pageerror', (e) => errors.push(e.message));
+    await page.goto('file://' + path.join(__dirname, '..', 'index.html'));
+    await page.waitForFunction(() => document.documentElement.dataset.hero);
+    assert.equal(await page.evaluate(() => document.documentElement.dataset.hero), 'fallback');
+    assert.equal(await page.locator('.print-btn canvas').count(), 7);
+    // The printed row must not run into the headline.
+    const rowBottom = await page.evaluate(() => document.getElementById('heroPrints').getBoundingClientRect().bottom);
+    const titleTop = await page.evaluate(() => document.querySelector('.hero-title').getBoundingClientRect().top);
+    assert.ok(rowBottom <= titleTop, `prints (${rowBottom}) overlap headline (${titleTop})`);
+    await page.locator('.print-btn').nth(0).click();
+    await page.waitForSelector('#imageWorkspace', { state: 'visible' });
+    assert.deepEqual(errors, []);
+});

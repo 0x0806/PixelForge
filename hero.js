@@ -70,7 +70,14 @@
     function showFallback(canvases) {
         document.documentElement.dataset.hero = 'fallback';
         stage.classList.add('hero-stage--fallback');
+        stage.parentElement.classList.add('hero--fallback');
         canvases.forEach((c, i) => buttons[i].appendChild(c));
+        // Captions were drawn before the font loaded; redraw them once it has.
+        if (document.fonts && document.fonts.load) {
+            Promise.all([document.fonts.load('600 30px Archivo'), document.fonts.load('400 22px Archivo')])
+                .then(() => chosen.forEach((p, i) => canvases[i].getContext('2d').drawImage(drawPrint(p), 0, 0)))
+                .catch(() => {});
+        }
     }
 
     function start() {
